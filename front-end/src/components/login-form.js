@@ -45,7 +45,8 @@ export class LoginForm extends LitElement {
       }
       location.assign("/home");
     } catch (err) {
-      this._error = AUTH_ERROR_MESSAGES[err.code] ?? `Something went wrong (${err.code ?? err.message}).`;
+      this._error =
+        AUTH_ERROR_MESSAGES[err.code] ?? `Something went wrong (${err.code ?? err.message}).`;
     } finally {
       this._busy = false;
     }
@@ -53,11 +54,9 @@ export class LoginForm extends LitElement {
 
   render() {
     return html`
-      <form
-        class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
-        @submit=${(e) => e.preventDefault()}
-      >
-        <h2 class="mb-4 text-xl font-semibold">Sign in</h2>
+      <form class="card card-pad" @submit=${(e) => e.preventDefault()}>
+        <h2 class="text-base font-semibold tracking-tight">Sign in</h2>
+        <p class="section-hint mb-4">Staff accounts only. Records are shared across the desk.</p>
 
         ${this._error ? html`<ui-alert variant="error" .message=${this._error}></ui-alert>` : ""}
 
@@ -79,9 +78,9 @@ export class LoginForm extends LitElement {
           @input=${this._updateField("_password")}
         ></ui-input>
 
-        <div class="mt-1 flex gap-2">
+        <div class="mt-1 grid gap-2 sm:grid-cols-2">
           <ui-button
-            class="flex-1"
+            full
             variant="primary"
             type="submit"
             ?disabled=${this._busy}
@@ -89,17 +88,12 @@ export class LoginForm extends LitElement {
           >
             Sign in
           </ui-button>
-          <ui-button
-            class="flex-1"
-            variant="outline"
-            ?disabled=${this._busy}
-            @click=${() => this._submit("signup")}
-          >
+          <ui-button full variant="outline" ?disabled=${this._busy} @click=${() => this._submit("signup")}>
             Create account
           </ui-button>
         </div>
 
-        <p class="mt-3 text-xs text-slate-400">
+        <p class="mt-4 text-xs text-muted-foreground">
           Emulator-only auth -- accounts do not persist across emulator restarts.
         </p>
       </form>

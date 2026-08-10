@@ -13,6 +13,7 @@
 // the build, so there is still exactly one stylesheet in either mode.
 import htmx from "htmx.org";
 import { installHtmxAuth, refresh, FN_ORIGIN } from "./services/api.js";
+import { installNavigationHooks } from "./screen.js";
 import { trackOnline } from "./utils/online.js";
 
 // htmx 2 defaults selfRequestsOnly to true, which silently drops every
@@ -41,6 +42,7 @@ htmx.config.responseHandling = [
 window.htmx = htmx; // handy for console debugging
 
 installHtmxAuth();
+installNavigationHooks();
 trackOnline(refresh);
 
 // Offline behavior depends on a hashed, versioned build -- vite dev serves

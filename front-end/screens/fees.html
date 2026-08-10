@@ -4,21 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Fees -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <div class="min-h-screen">
-      <app-header></app-header>
-      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
-        <section class="card">
-          <h2 class="section-title mb-3">Record a fee receipt</h2>
+  <body class="min-h-screen" data-auth-pending>
+    <div class="nav-progress" aria-hidden="true"></div>
+    <app-sidebar></app-sidebar>
+    <div class="lg:pl-60">
+      <app-topbar></app-topbar>
+      <!-- The boosted swap target. Nav links carry hx-select="#page" +
+           hx-swap="outerHTML", so a screen change replaces exactly this element
+           and the shell above is never redrawn. -->
+      <main id="page" class="mx-auto grid max-w-4xl gap-5 px-4 py-6 sm:px-6">
+        <section class="card card-pad">
+          <h2 class="section-title">Record a fee receipt</h2>
+          <p class="section-hint">Receipts are append-only. To fix a wrong one, record a negative adjustment rather than editing history.</p>
           <form
             id="payment-form"
+            class="mt-4 sm:grid sm:grid-cols-2 sm:gap-x-4"
+            data-toast="Receipt recorded"
             hx-post="%VITE_FN_BASE%/api-payments/payments"
             hx-target="#payments-slot"
             hx-swap="innerHTML"
             hx-indicator="#fees-spinner"
-            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
           >
             <label class="field sm:col-span-2">
               <span>Student</span>
@@ -38,12 +58,16 @@
             </label>
 
             <label class="field">
-              <span>Amount (₹, negative to correct a receipt)</span>
-              <input class="control" name="amount" type="number" step="1" required />
+              <span>Amount</span>
+              <input class="control num" name="amount" type="number" step="1" required placeholder="20000" />
+              <span class="field-hint">Negative to correct an earlier receipt.</span>
             </label>
 
             <label class="field">
               <span>Mode</span>
+              <!-- Options come from the server (endpoints/default/options.js) so a
+                   <select>'s values can never drift from the model's enum.
+                   hx-target="this" replaces this element's own children. -->
               <select
                 class="control"
                 name="mode"
@@ -61,22 +85,27 @@
             </label>
 
             <label class="field">
-              <span>Note (optional)</span>
+              <span>Note</span>
               <input class="control" name="note" maxlength="300" placeholder="Instalment 2" />
+              <span class="field-hint">Optional.</span>
             </label>
 
-            <div class="sm:col-span-2">
+            <div class="sm:col-span-2 mt-1">
               <ui-button variant="primary" type="submit" data-needs-net>Record receipt</ui-button>
             </div>
           </form>
         </section>
 
         <section>
-          <h2 class="section-title mb-3">Fee position</h2>
-          <p id="fees-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
-          <!-- `reload` is fired by the entry script after a receipt is saved:
-               the POST response refreshes the receipt list, and this panel has
-               to catch up with it. -->
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h2 class="section-title">Fee position</h2>
+            <span id="fees-spinner" class="htmx-indicator text-xs text-muted-foreground"
+              >Updating…</span
+            >
+          </div>
+          <!-- `reload` is fired by screen.js after a receipt is saved: the POST
+               response refreshes the receipt list, and this panel has to catch
+               up with it. -->
           <div
             id="fee-summary-slot"
             hx-get="%VITE_FN_BASE%/api-payments/summary"
@@ -84,7 +113,9 @@
             hx-include="#fee-student"
             hx-swap="innerHTML"
             hx-indicator="#fees-spinner"
-          ></div>
+          >
+            <div class="skeleton h-[7.5rem] w-full"></div>
+          </div>
         </section>
 
         <section>
@@ -96,10 +127,13 @@
             hx-include="#fee-student"
             hx-swap="innerHTML"
             hx-indicator="#fees-spinner"
-          ></div>
+          >
+            <ui-skeleton rows="2"></ui-skeleton>
+          </div>
         </section>
       </main>
     </div>
+    <ui-toasts></ui-toasts>
     <script type="module" src="/src/entries/fees.js"></script>
   </body>
 </html>

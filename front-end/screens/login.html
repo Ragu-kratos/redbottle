@@ -4,11 +4,34 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sign in -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <main class="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-      <h1 class="mb-4 text-center text-xl font-semibold">RedBottle Institute</h1>
+  <body class="min-h-screen" data-auth-pending>
+    <main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-4 py-10">
+      <div class="mb-6 flex items-center gap-2.5">
+        <span
+          class="grid size-8 shrink-0 place-items-center rounded-md bg-primary text-xs font-bold text-primary-foreground"
+          aria-hidden="true"
+          >RB</span
+        >
+        <div>
+          <p class="text-sm font-semibold tracking-tight">RedBottle Institute</p>
+          <p class="text-xs text-muted-foreground">Front-desk sign in</p>
+        </div>
+      </div>
       <login-form></login-form>
     </main>
     <script type="module" src="/src/entries/login.js"></script>

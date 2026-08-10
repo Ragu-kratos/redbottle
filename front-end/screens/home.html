@@ -4,59 +4,107 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dashboard -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <div class="min-h-screen">
-      <app-header></app-header>
-      <main class="mx-auto grid max-w-4xl gap-6 px-4 py-6">
+  <body class="min-h-screen" data-auth-pending>
+    <div class="nav-progress" aria-hidden="true"></div>
+    <app-sidebar></app-sidebar>
+    <div class="lg:pl-60">
+      <app-topbar></app-topbar>
+      <!-- The boosted swap target. Nav links carry hx-select="#page" +
+           hx-swap="outerHTML", so a screen change replaces exactly this element
+           and the shell above is never redrawn. -->
+      <main id="page" class="mx-auto grid max-w-4xl gap-5 px-4 py-6 sm:px-6">
         <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="section-title">Today at a glance</h2>
-            <ui-button
-              size="xs"
-              variant="outline"
-              data-needs-net
-              data-api="dashboard"
-              hx-target="#dashboard-slot"
-              hx-swap="innerHTML"
-              hx-indicator="#dashboard-spinner"
-            >
-              Refresh
-            </ui-button>
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h2 class="section-title">This month</h2>
+            <div class="flex items-center gap-2">
+              <span id="dashboard-spinner" class="htmx-indicator text-xs text-muted-foreground"
+                >Updating…</span
+              >
+              <ui-button
+                size="xs"
+                variant="ghost"
+                data-needs-net
+                data-api="dashboard"
+                hx-target="#dashboard-slot"
+                hx-swap="innerHTML"
+                hx-indicator="#dashboard-spinner"
+                >Refresh</ui-button
+              >
+            </div>
           </div>
-          <!-- Spinner sits OUTSIDE #dashboard-slot: nesting it inside means
-               the first innerHTML swap destroys it, and every trigger after
-               that points hx-indicator at nothing. -->
-          <p id="dashboard-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
           <!-- hx-get must be static here (Vite replaces %VITE_FN_BASE%), not
-               JS-stamped: htmx's own auto-init fires the one-shot "load"
-               trigger before the entry script's auth-gated stampEndpoints()
-               ever runs, so a JS-only URL is always missing when "load"
-               fires. The Refresh button above is click-triggered, which is
-               why data-api works for it. -->
+               JS-stamped: htmx fires the one-shot "load" trigger during its own
+               auto-init, before screen.js's auth-gated stampEndpoints() runs, so
+               a JS-only URL is always still missing. The Refresh button above is
+               click-triggered, which is why data-api works for it. -->
           <div
             id="dashboard-slot"
             hx-get="%VITE_FN_BASE%/api-dashboard/dashboard"
             hx-trigger="load, refresh from:body"
             hx-swap="innerHTML"
             hx-indicator="#dashboard-spinner"
-          ></div>
+          >
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+              <div class="skeleton h-[5.5rem]"></div>
+              <div class="skeleton h-[5.5rem]"></div>
+              <div class="skeleton h-[5.5rem]"></div>
+              <div class="skeleton h-[5.5rem]"></div>
+              <div class="skeleton h-[5.5rem]"></div>
+              <div class="skeleton h-[5.5rem]"></div>
+            </div>
+          </div>
         </section>
 
-        <section class="card">
-          <h2 class="section-title mb-2">Where to start</h2>
-          <ul class="grid gap-1 text-sm text-slate-600">
-            <li>Add your <a class="underline" href="/courses">courses</a> and
-              <a class="underline" href="/trainers">trainers</a> first.</li>
-            <li>Open a <a class="underline" href="/batches">batch</a> for a course, then
-              <a class="underline" href="/students">enrol students</a> into it.</li>
-            <li>Mark <a class="underline" href="/attendance">attendance</a> per batch per day,
-              and record <a class="underline" href="/fees">fees</a> as they come in.</li>
-          </ul>
+        <section class="card card-pad">
+          <h2 class="section-title">Setting up</h2>
+          <p class="section-hint">
+            Records depend on each other, so this is the order that works.
+          </p>
+          <ol class="mt-3 grid gap-2.5 text-sm">
+            <li class="flex gap-3">
+              <span class="badge badge-neutral num mt-px">1</span>
+              <span
+                >Add your <a class="font-medium underline underline-offset-2" href="/courses">courses</a>
+                and <a class="font-medium underline underline-offset-2" href="/trainers">trainers</a>.</span
+              >
+            </li>
+            <li class="flex gap-3">
+              <span class="badge badge-neutral num mt-px">2</span>
+              <span
+                >Open a <a class="font-medium underline underline-offset-2" href="/batches">batch</a> for a
+                course, then
+                <a class="font-medium underline underline-offset-2" href="/students">enrol students</a> into
+                it.</span
+              >
+            </li>
+            <li class="flex gap-3">
+              <span class="badge badge-neutral num mt-px">3</span>
+              <span
+                >Mark <a class="font-medium underline underline-offset-2" href="/attendance">attendance</a>
+                each day, and record
+                <a class="font-medium underline underline-offset-2" href="/fees">fees</a> as they come in.</span
+              >
+            </li>
+          </ol>
         </section>
       </main>
     </div>
+    <ui-toasts></ui-toasts>
     <script type="module" src="/src/entries/home.js"></script>
   </body>
 </html>

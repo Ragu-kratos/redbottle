@@ -4,29 +4,50 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Attendance -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <div class="min-h-screen">
-      <app-header></app-header>
-      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
-        <section class="card">
-          <h2 class="section-title mb-3">Mark attendance</h2>
+  <body class="min-h-screen" data-auth-pending>
+    <div class="nav-progress" aria-hidden="true"></div>
+    <app-sidebar></app-sidebar>
+    <div class="lg:pl-60">
+      <app-topbar></app-topbar>
+      <!-- The boosted swap target. Nav links carry hx-select="#page" +
+           hx-swap="outerHTML", so a screen change replaces exactly this element
+           and the shell above is never redrawn. -->
+      <main id="page" class="mx-auto grid max-w-4xl gap-5 px-4 py-6 sm:px-6">
+        <section id="attendance-panel" class="card card-pad">
+          <h2 class="section-title">Mark the register</h2>
+          <p class="section-hint">
+            Everyone starts marked present. Untick whoever is missing, then save.
+          </p>
 
-          <!-- The controls and the register are deliberately NOT one <form>.
-               The register is swapped in by htmx, and one element cannot carry
-               both the hx-get that loads it and the hx-post that saves it -- so
-               the controls own the GET (on change) and the Save button owns the
-               POST, each naming what to include. -->
+          <!-- The controls and the register are deliberately NOT one <form>. The
+               register is swapped in by htmx, and one element cannot carry both
+               the hx-get that loads it and the hx-post that saves it -- so the
+               controls own the GET (on change) and the Save button owns the POST,
+               each naming what to include. -->
           <div
             id="attendance-controls"
+            class="mt-4 sm:grid sm:grid-cols-2 sm:gap-x-4"
             hx-get="%VITE_FN_BASE%/api-attendance/roster"
             hx-trigger="change"
             hx-include="#attendance-controls"
             hx-target="#roster-slot"
             hx-swap="innerHTML"
             hx-indicator="#attendance-spinner"
-            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
           >
             <label class="field">
               <span>Batch</span>
@@ -46,22 +67,16 @@
 
             <label class="field">
               <span>Date</span>
-              <!-- Prefilled with today by the entry script (prefillDates), so
-                   picking a batch is enough to load today's register. -->
+              <!-- Prefilled with today by screen.js, so picking a batch is enough
+                   to load today's register. -->
               <input class="control" name="date" type="date" required />
             </label>
           </div>
 
-          <!-- Spinner outside #roster-slot, or the first swap destroys it. -->
-          <p id="attendance-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
-
-          <div id="roster-slot" class="mt-1">
-            <p class="rounded border border-slate-200 bg-white p-3 text-sm text-slate-500">
-              Pick a batch to load its register for the chosen date.
-            </p>
-          </div>
-
-          <div class="mt-3">
+          <!-- Actions sit ABOVE the register on purpose. Below it they were
+               pushed down by however many students loaded (a real layout shift),
+               and Save was off-screen for a large class. -->
+          <div class="mb-3 flex flex-wrap items-center gap-1.5 border-t pt-4">
             <!-- Includes both the controls (batchId + date) and the swapped-in
                  checkboxes. An unchecked box posts nothing at all, which is why
                  the server re-reads the batch roster and treats every student
@@ -74,13 +89,25 @@
               hx-target="#roster-slot"
               hx-swap="innerHTML"
               hx-indicator="#attendance-spinner"
+              >Save attendance</ui-button
             >
-              Save attendance
-            </ui-button>
+            <ui-button size="sm" variant="ghost" data-mark-all="present">All present</ui-button>
+            <ui-button size="sm" variant="ghost" data-mark-all="absent">All absent</ui-button>
+            <span id="attendance-spinner" class="htmx-indicator ml-auto text-xs text-muted-foreground"
+              >Loading register…</span
+            >
+          </div>
+
+          <div id="roster-slot">
+            <div class="empty">
+              <p class="empty-title">No batch chosen</p>
+              <p class="empty-hint">Pick a batch to load its register for the selected date.</p>
+            </div>
           </div>
         </section>
       </main>
     </div>
+    <ui-toasts></ui-toasts>
     <script type="module" src="/src/entries/attendance.js"></script>
   </body>
 </html>

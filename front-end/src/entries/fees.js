@@ -1,31 +1,12 @@
 import "../bootstrap.js";
-import htmx from "htmx.org";
-import { requireUser } from "../services/auth.js";
-import { resetAfterSave, prefillDates } from "../utils/forms.js";
-import "../components/app-header.js";
-import "../components/ui-button.js";
+import { bootScreen } from "../screen.js";
 
-if (await requireUser()) {
-  const form = document.getElementById("payment-form");
-
-  // Keep the student and the date: the next thing entered after one receipt is
-  // usually another instalment for the same student on the same day, and
-  // clearing the student would also blank the two panels below, which are
-  // driven by that <select>.
-  resetAfterSave(form, { keep: ["studentId", "paidOn"] });
-
-  // The POST refreshes the receipt list (it targets #payments-slot), but the
-  // totals panel is a separate slot with its own request, so nudge it.
-  //
-  // Same guard as resetAfterSave: htmx:afterRequest bubbles, and the student and
-  // mode <select>s in this form each load their own options, so without it the
-  // summary would reload on those too -- before a student is even chosen.
-  form.addEventListener("htmx:afterRequest", (evt) => {
-    if ((evt.detail.elt ?? evt.target) !== form) return;
-    if (evt.detail.successful) htmx.trigger("#fee-summary-slot", "reload");
-  });
-
-  prefillDates(document);
-
-  htmx.process(document.body);
-}
+// Every signed-in screen's entry is this same delegation, on purpose. Navigation
+// is boosted, so a screen change swaps #page without loading a document -- a
+// module here would run only on the first visit to this screen and never again.
+// The re-runnable setup therefore lives in screen.js, which routes.js maps to
+// this screen by pathname.
+//
+// The file still exists per screen because it is this document's script tag, and
+// the structure audit checks screens and entries stay one-to-one.
+await bootScreen();

@@ -1,18 +1,12 @@
 import "../bootstrap.js";
-import htmx from "htmx.org";
-import { requireUser } from "../services/auth.js";
-import { prefillDates } from "../utils/forms.js";
-import "../components/app-header.js";
-import "../components/ui-button.js";
+import { bootScreen } from "../screen.js";
 
-// No form on this screen, so no resetAfterSave and no [data-api] elements to
-// stamp: the batch <select>, the roster GET and the save POST all spell their
-// URLs out statically in attendance.html.
-if (await requireUser()) {
-  // Must run before htmx.process(): the register is loaded by a change on the
-  // controls, and that request includes the date field -- which has to already
-  // hold today rather than an empty string.
-  prefillDates(document);
-
-  htmx.process(document.body);
-}
+// Every signed-in screen's entry is this same delegation, on purpose. Navigation
+// is boosted, so a screen change swaps #page without loading a document -- a
+// module here would run only on the first visit to this screen and never again.
+// The re-runnable setup therefore lives in screen.js, which routes.js maps to
+// this screen by pathname.
+//
+// The file still exists per screen because it is this document's script tag, and
+// the structure audit checks screens and entries stay one-to-one.
+await bootScreen();

@@ -6,7 +6,7 @@
 // `vite dev`, and via DevTools Network > Offline, not disabling Wi-Fi
 // (everything here is loopback).
 
-const VERSION = "v1"; // bump to invalidate every cache below
+const VERSION = "v2"; // bump to invalidate every cache below
 const SHELL_CACHE = `shell-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
@@ -71,10 +71,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigations: network-first (always pick up a new build when online),
-  // fall back to that route's cached document when offline, then to a
-  // generic offline page for a route never visited before.
-  if (req.mode === "navigate") {
+  // Navigations, including htmx-boosted ones: network-first (always pick up a
+  // new build when online), fall back to that route's cached document when
+  // offline, then to a generic offline page for a route never visited before.
+  //
+  // The isDocument test matters as much as req.mode here. A boosted screen
+  // change is a same-origin fetch for an HTML document, not a
+  // mode === "navigate" request, so without it a boosted navigation would fall
+  // through to the stale-while-revalidate branch below and could serve a screen
+  // from an older build than the shell it is being swapped into.
+  if (req.mode === "navigate" || isDocument(req, url)) {
     const routeKey = url.pathname;
     event.respondWith(
       (async () => {
@@ -153,6 +159,15 @@ self.addEventListener("fetch", (event) => {
 
   // Anything else: pass through untouched.
 });
+
+// A request for an HTML document: either a real navigation or htmx swapping one
+// screen's #page into another. Boosted requests also carry HX-Request, but the
+// Accept header is the more general signal and is set on both.
+function isDocument(req, url) {
+  if (url.origin !== self.location.origin) return false;
+  const accept = req.headers.get("accept") || "";
+  return accept.includes("text/html");
+}
 
 // The cache key must not vary with the rotating Bearer token, and the Cache
 // API must never persist a request carrying a credential.

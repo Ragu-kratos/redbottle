@@ -28,6 +28,17 @@ export function resetAfterSave(form, { keep = [] } = {}) {
 
     if (!evt.detail.successful) return;
 
+    // Confirmation copy is declared on the form as data-toast, in the same
+    // active voice as the button that submitted it ("Enrol student" ->
+    // "Student enrolled"), so the wording stays in the screen's markup next to
+    // the button rather than in a lookup table over here.
+    const message = form.dataset.toast;
+    if (message) {
+      form.dispatchEvent(
+        new CustomEvent("app:toast", { detail: { message }, bubbles: true })
+      );
+    }
+
     const preserved = keep.map((name) => [name, form.elements[name]?.value]);
     form.reset();
     for (const [name, value] of preserved) {

@@ -4,35 +4,53 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Batches -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <div class="min-h-screen">
-      <app-header></app-header>
-      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
-        <section class="card">
-          <h2 class="section-title mb-3">Open a batch</h2>
-          <p class="mb-3 text-sm text-slate-500">
-            A batch is one running instance of a course. Add the
-            <a class="underline" href="/courses">course</a> and
-            <a class="underline" href="/trainers">trainer</a> first -- the server rejects a
-            batch pointing at either one that no longer exists.
-          </p>
+  <body class="min-h-screen" data-auth-pending>
+    <div class="nav-progress" aria-hidden="true"></div>
+    <app-sidebar></app-sidebar>
+    <div class="lg:pl-60">
+      <app-topbar></app-topbar>
+      <!-- The boosted swap target. Nav links carry hx-select="#page" +
+           hx-swap="outerHTML", so a screen change replaces exactly this element
+           and the shell above is never redrawn. -->
+      <main id="page" class="mx-auto grid max-w-4xl gap-5 px-4 py-6 sm:px-6">
+        <section class="card card-pad">
+          <h2 class="section-title">Open a batch</h2>
+          <p class="section-hint">Add the course and trainer first -- the server rejects a batch pointing at either one that no longer exists.</p>
           <form
             id="batch-form"
+            class="mt-4 sm:grid sm:grid-cols-2 sm:gap-x-4"
+            data-toast="Batch opened"
             hx-post="%VITE_FN_BASE%/api-batches/batches"
             hx-target="#batches-slot"
             hx-swap="innerHTML"
             hx-indicator="#batches-spinner"
-            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
           >
             <label class="field">
               <span>Batch code</span>
               <input class="control" name="code" required maxlength="40" placeholder="MERN-A" />
+              <span class="field-hint">What the front desk says out loud.</span>
             </label>
 
             <label class="field">
               <span>Course</span>
+              <!-- Options come from the server (endpoints/default/options.js) so a
+                   <select>'s values can never drift from the model's enum.
+                   hx-target="this" replaces this element's own children. -->
               <select
                 class="control"
                 name="courseId"
@@ -46,6 +64,9 @@
 
             <label class="field">
               <span>Trainer</span>
+              <!-- Options come from the server (endpoints/default/options.js) so a
+                   <select>'s values can never drift from the model's enum.
+                   hx-target="this" replaces this element's own children. -->
               <select
                 class="control"
                 name="trainerId"
@@ -59,6 +80,9 @@
 
             <label class="field">
               <span>Status</span>
+              <!-- Options come from the server (endpoints/default/options.js) so a
+                   <select>'s values can never drift from the model's enum.
+                   hx-target="this" replaces this element's own children. -->
               <select
                 class="control"
                 name="status"
@@ -76,52 +100,64 @@
             </label>
 
             <label class="field">
-              <span>End date (optional)</span>
+              <span>End date</span>
               <input class="control" name="endDate" type="date" />
+              <span class="field-hint">Optional. Leave blank for an open-ended batch.</span>
             </label>
 
             <label class="field">
-              <span>Schedule (optional)</span>
+              <span>Schedule</span>
               <input class="control" name="schedule" maxlength="120" placeholder="Mon/Wed/Fri 7-9pm" />
+              <span class="field-hint">Optional.</span>
             </label>
 
             <label class="field">
-              <span>Capacity (seats)</span>
-              <input class="control" name="capacity" type="number" min="1" max="500" required />
+              <span>Capacity</span>
+              <input class="control num" name="capacity" type="number" min="1" max="500" required placeholder="24" />
+              <span class="field-hint">Seats. Enrolment stops when the batch is full.</span>
             </label>
 
-            <div class="sm:col-span-2">
+            <div class="sm:col-span-2 mt-1">
               <ui-button variant="primary" type="submit" data-needs-net>Open batch</ui-button>
             </div>
           </form>
         </section>
 
         <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="section-title">Batches</h2>
-            <ui-button
-              size="xs"
-              variant="outline"
-              data-needs-net
-              data-api="batches"
-              hx-target="#batches-slot"
-              hx-swap="innerHTML"
-              hx-indicator="#batches-spinner"
-            >
-              Refresh
-            </ui-button>
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 class="section-title">Batches</h2>
+              
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <span id="batches-spinner" class="htmx-indicator text-xs text-muted-foreground"
+                >Updating…</span
+              >
+              <ui-button
+                size="xs"
+                variant="ghost"
+                data-needs-net
+                data-api="batches"
+                hx-target="#batches-slot"
+                hx-swap="innerHTML"
+                hx-indicator="#batches-spinner"
+                >Refresh</ui-button
+              >
+            </div>
           </div>
-          <p id="batches-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
           <div
             id="batches-slot"
             hx-get="%VITE_FN_BASE%/api-batches/batches"
             hx-trigger="load, refresh from:body"
             hx-swap="innerHTML"
             hx-indicator="#batches-spinner"
-          ></div>
+          >
+            <ui-skeleton rows="3"></ui-skeleton>
+          </div>
         </section>
       </main>
     </div>
+    <ui-toasts></ui-toasts>
     <script type="module" src="/src/entries/batches.js"></script>
   </body>
 </html>

@@ -4,74 +4,105 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Trainers -- RedBottle Institute</title>
+    <!-- Render-blocking on purpose. Imported from JS, the stylesheet only
+         arrived after Vite resolved the module graph, so dev's first paint had
+         no CSS at all -- including the [data-auth-pending] gate, which meant raw
+         unstyled markup was briefly visible. -->
     <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Applies a stored theme choice before first paint. Inline and synchronous
+         on purpose: setting this from a module would paint the light palette and
+         then repaint dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
-    <div class="min-h-screen">
-      <app-header></app-header>
-      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
-        <section class="card">
-          <h2 class="section-title mb-3">Add a trainer</h2>
+  <body class="min-h-screen" data-auth-pending>
+    <div class="nav-progress" aria-hidden="true"></div>
+    <app-sidebar></app-sidebar>
+    <div class="lg:pl-60">
+      <app-topbar></app-topbar>
+      <!-- The boosted swap target. Nav links carry hx-select="#page" +
+           hx-swap="outerHTML", so a screen change replaces exactly this element
+           and the shell above is never redrawn. -->
+      <main id="page" class="mx-auto grid max-w-4xl gap-5 px-4 py-6 sm:px-6">
+        <section class="card card-pad">
+          <h2 class="section-title">Add a trainer</h2>
+          <p class="section-hint">Trainers are referenced by batches, so a rename here never rewrites a batch.</p>
           <form
             id="trainer-form"
+            class="mt-4 sm:grid sm:grid-cols-2 sm:gap-x-4"
+            data-toast="Trainer added"
             hx-post="%VITE_FN_BASE%/api-trainers/trainers"
             hx-target="#trainers-slot"
             hx-swap="innerHTML"
             hx-indicator="#trainers-spinner"
-            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
           >
             <label class="field">
               <span>Name</span>
-              <input class="control" name="name" required maxlength="120" />
+              <input class="control" name="name" required maxlength="120" placeholder="Anita Raghavan" />
             </label>
 
             <label class="field">
               <span>Phone</span>
-              <input class="control" name="phone" required maxlength="24" />
+              <input class="control num" name="phone" required maxlength="24" placeholder="+91 98400 11223" />
             </label>
 
             <label class="field">
-              <span>Email (optional)</span>
-              <input class="control" name="email" type="email" maxlength="160" />
+              <span>Email</span>
+              <input class="control" name="email" type="email" maxlength="160" placeholder="anita@example.com" />
+              <span class="field-hint">Optional.</span>
             </label>
 
             <label class="field">
-              <span>Expertise (optional)</span>
-              <input class="control" name="expertise" maxlength="200" />
+              <span>Expertise</span>
+              <input class="control" name="expertise" maxlength="200" placeholder="JavaScript, React, system design" />
+              <span class="field-hint">Optional.</span>
             </label>
 
-            <div class="sm:col-span-2">
+            <div class="sm:col-span-2 mt-1">
               <ui-button variant="primary" type="submit" data-needs-net>Add trainer</ui-button>
             </div>
           </form>
         </section>
 
         <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="section-title">Trainers</h2>
-            <ui-button
-              size="xs"
-              variant="outline"
-              data-needs-net
-              data-api="trainers"
-              hx-target="#trainers-slot"
-              hx-swap="innerHTML"
-              hx-indicator="#trainers-spinner"
-            >
-              Refresh
-            </ui-button>
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 class="section-title">Trainers</h2>
+              
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <span id="trainers-spinner" class="htmx-indicator text-xs text-muted-foreground"
+                >Updating…</span
+              >
+              <ui-button
+                size="xs"
+                variant="ghost"
+                data-needs-net
+                data-api="trainers"
+                hx-target="#trainers-slot"
+                hx-swap="innerHTML"
+                hx-indicator="#trainers-spinner"
+                >Refresh</ui-button
+              >
+            </div>
           </div>
-          <p id="trainers-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
           <div
             id="trainers-slot"
             hx-get="%VITE_FN_BASE%/api-trainers/trainers"
             hx-trigger="load, refresh from:body"
             hx-swap="innerHTML"
             hx-indicator="#trainers-spinner"
-          ></div>
+          >
+            <ui-skeleton rows="3"></ui-skeleton>
+          </div>
         </section>
       </main>
     </div>
+    <ui-toasts></ui-toasts>
     <script type="module" src="/src/entries/trainers.js"></script>
   </body>
 </html>

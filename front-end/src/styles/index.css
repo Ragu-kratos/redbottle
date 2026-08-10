@@ -6,75 +6,539 @@
    entirely. Keep this path in sync if renderer.js ever moves. */
 @source "../../../functions/libs/services/renderer.js";
 
-/* Custom elements default to display:inline; Tailwind's Preflight does not
-   change that. Without this, the whole app renders as an inline run. */
+/* ---------------------------------------------------------------------------
+   Design tokens
+
+   A semantic layer (background / card / muted / border / primary ...) rather
+   than raw palette classes, in the shape shadcn-family systems use -- which is
+   what ui.unlumen.com is built on.
+
+   The reason this matters here more than usual: half of this app's markup is
+   rendered by a Cloud Function (services/renderer.js). If dark mode were
+   expressed with Tailwind's `dark:` variants, every fragment function would
+   have to carry a light and a dark class for every colour. Instead the tokens
+   themselves flip, so `bg-card` is correct in both themes and the renderer
+   never mentions a theme at all.
+
+   Colours are oklch for perceptually even lightness steps -- the borders and
+   muted text stay at the same apparent contrast when the palette flips.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.995 0.001 286);
+  --foreground: oklch(0.21 0.006 286);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.006 286);
+
+  --muted: oklch(0.968 0.002 286);
+  --muted-foreground: oklch(0.552 0.014 286);
+
+  --border: oklch(0.918 0.004 286);
+  --input: oklch(0.918 0.004 286);
+  --ring: oklch(0.62 0.16 258);
+
+  --primary: oklch(0.28 0.008 286);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.968 0.002 286);
+  --secondary-foreground: oklch(0.28 0.008 286);
+
+  --accent: oklch(0.968 0.002 286);
+  --accent-foreground: oklch(0.28 0.008 286);
+
+  --destructive: oklch(0.58 0.21 27);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  /* Status pairs. `-soft` is the tinted chip background, the matching
+     `-foreground` is legible text on top of it in both themes. */
+  --success-soft: oklch(0.94 0.05 158);
+  --success-foreground: oklch(0.45 0.12 158);
+  --warning-soft: oklch(0.95 0.06 85);
+  --warning-foreground: oklch(0.48 0.11 70);
+  --danger-soft: oklch(0.95 0.03 25);
+  --danger-foreground: oklch(0.51 0.19 27);
+  --info-soft: oklch(0.95 0.03 250);
+  --info-foreground: oklch(0.48 0.14 255);
+
+  --shadow-color: 286 15% 12%;
+}
+
+/* Default to the system preference, but never override an explicit choice.
+   `:root:not([data-theme="light"])` is what keeps a user who picked light mode
+   in light mode on a dark-set OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: oklch(0.165 0.005 286);
+    --foreground: oklch(0.96 0.002 286);
+
+    --card: oklch(0.205 0.006 286);
+    --card-foreground: oklch(0.96 0.002 286);
+
+    --muted: oklch(0.26 0.007 286);
+    --muted-foreground: oklch(0.7 0.014 286);
+
+    --border: oklch(0.288 0.008 286);
+    --input: oklch(0.31 0.009 286);
+    --ring: oklch(0.66 0.15 258);
+
+    --primary: oklch(0.96 0.002 286);
+    --primary-foreground: oklch(0.21 0.006 286);
+
+    --secondary: oklch(0.27 0.007 286);
+    --secondary-foreground: oklch(0.96 0.002 286);
+
+    --accent: oklch(0.29 0.008 286);
+    --accent-foreground: oklch(0.96 0.002 286);
+
+    --destructive: oklch(0.62 0.2 25);
+    --destructive-foreground: oklch(0.985 0 0);
+
+    --success-soft: oklch(0.29 0.06 158);
+    --success-foreground: oklch(0.84 0.12 158);
+    --warning-soft: oklch(0.31 0.06 75);
+    --warning-foreground: oklch(0.87 0.11 85);
+    --danger-soft: oklch(0.3 0.07 25);
+    --danger-foreground: oklch(0.83 0.12 25);
+    --info-soft: oklch(0.29 0.06 255);
+    --info-foreground: oklch(0.84 0.1 250);
+
+    --shadow-color: 286 40% 2%;
+  }
+}
+
+/* The explicit toggle wins in both directions. */
+:root[data-theme="dark"] {
+  --background: oklch(0.165 0.005 286);
+  --foreground: oklch(0.96 0.002 286);
+  --card: oklch(0.205 0.006 286);
+  --card-foreground: oklch(0.96 0.002 286);
+  --muted: oklch(0.26 0.007 286);
+  --muted-foreground: oklch(0.7 0.014 286);
+  --border: oklch(0.288 0.008 286);
+  --input: oklch(0.31 0.009 286);
+  --ring: oklch(0.66 0.15 258);
+  --primary: oklch(0.96 0.002 286);
+  --primary-foreground: oklch(0.21 0.006 286);
+  --secondary: oklch(0.27 0.007 286);
+  --secondary-foreground: oklch(0.96 0.002 286);
+  --accent: oklch(0.29 0.008 286);
+  --accent-foreground: oklch(0.96 0.002 286);
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success-soft: oklch(0.29 0.06 158);
+  --success-foreground: oklch(0.84 0.12 158);
+  --warning-soft: oklch(0.31 0.06 75);
+  --warning-foreground: oklch(0.87 0.11 85);
+  --danger-soft: oklch(0.3 0.07 25);
+  --danger-foreground: oklch(0.83 0.12 25);
+  --info-soft: oklch(0.29 0.06 255);
+  --info-foreground: oklch(0.84 0.1 250);
+  --shadow-color: 286 40% 2%;
+}
+
+/* Exposes the tokens above as Tailwind utilities: bg-card, text-muted-foreground,
+   border-border, ring-ring, rounded-lg, and so on. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-success-soft: var(--success-soft);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-info-foreground: var(--info-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Figures. Declared with @utility rather than as a plain component class so it
+   is a first-class utility -- usable in markup AND inside @apply below, which
+   a class defined in @layer components is not.
+
+   Money is the thing this app exists to get right, so every figure is set in
+   tabular figures: rupee columns line up digit-for-digit down a list, and a
+   running total never changes width as it changes value. */
+@utility num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
 @layer base {
-  app-header,
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    /* Boosted navigation swaps only #page, so the scroll position is the
+       document's -- keep it smooth for in-page anchors but never for people who
+       asked for less motion. */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Custom elements default to display:inline; Tailwind's Preflight does not
+     change that. Without this, the whole app renders as an inline run. */
+  app-shell,
+  app-sidebar,
+  app-topbar,
   login-form,
   ui-button,
   ui-input,
-  ui-alert {
+  ui-alert,
+  ui-skeleton,
+  ui-toasts,
+  ui-theme-toggle {
     display: block;
+  }
+
+  /* Reserve the shell's dimensions before Lit renders into it. The sidebar is
+     position:fixed so it costs no layout, but the top bar is in flow -- without
+     a reserved height the page starts 3.5rem too high and drops when the bar
+     appears. Same class of bug as the one that made the old header jump. */
+  app-topbar {
+    min-height: 3.5rem;
+  }
+
+  /* Names the boosted swap region for the View Transitions rules at the end of
+     this file. The persistent shell has no transition name, which is what keeps
+     it out of the animation. */
+  #page {
+    view-transition-name: page;
+  }
+
+  /* One visible focus treatment for every interactive thing, keyboard only. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  /* Form controls are plain <input>/<select>/<textarea> in the screens rather
-     than Lit components, for one concrete reason: htmx serialises a form by
-     reading the real DOM controls inside it, so every field needs a genuine
-     `name` on a genuine control, and a <select> that htmx swaps <option>s into
-     needs the hx-* attributes on the <select> itself (put them on a wrapping
-     custom element and the first swap replaces the <select>). These classes
-     keep that markup as short as a component call would be. */
-  .field {
-    @apply mb-3 block text-sm;
-  }
-
-  .field > span {
-    @apply mb-1 block text-slate-600;
-  }
-
-  .control {
-    @apply w-full rounded border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none;
-  }
+  /* --- surfaces ----------------------------------------------------------- */
 
   .card {
-    @apply rounded-lg border border-slate-200 bg-white p-4;
+    @apply rounded-xl border bg-card text-card-foreground;
+    box-shadow: 0 1px 2px -1px hsl(var(--shadow-color) / 0.08);
+  }
+
+  .card-pad {
+    @apply p-4 sm:p-5;
   }
 
   .section-title {
-    @apply text-base font-semibold text-slate-700;
+    @apply text-sm font-semibold tracking-tight text-foreground;
   }
+
+  .section-hint {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
+
+  /* --- form controls ------------------------------------------------------
+     Plain <input>/<select>/<textarea> in the screens rather than Lit
+     components, deliberately: htmx serialises a form from the real DOM
+     controls inside it, so every field needs a genuine `name`, and a <select>
+     that htmx swaps <option>s into needs the hx-* attributes on the <select>
+     itself (put them on a wrapping custom element and the first swap replaces
+     it). These classes keep that markup as short as a component call. */
+
+  .field {
+    @apply mb-4 block;
+  }
+
+  .field > span {
+    @apply mb-1.5 block text-[0.8125rem] font-medium text-foreground;
+  }
+
+  .field-hint {
+    @apply mt-1 block text-xs font-normal text-muted-foreground;
+  }
+
+  .control {
+    @apply w-full rounded-md border bg-card px-3 py-2 text-sm text-foreground shadow-none transition-colors;
+    @apply placeholder:text-muted-foreground/70;
+  }
+
+  .control:focus {
+    @apply outline-none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.18);
+  }
+
+  select.control {
+    /* Native arrow only; no background-image so the control stays correct when
+       the palette flips. */
+    @apply cursor-pointer appearance-none bg-no-repeat pr-9;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 1.1rem center, right 0.85rem center;
+    background-size: 0.3rem 0.3rem, 0.3rem 0.3rem;
+  }
+
+  .amount {
+    @apply num shrink-0 font-semibold text-foreground;
+  }
+
+  .stat-value {
+    @apply num mt-1 text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .stat-label {
+    @apply text-xs font-medium text-muted-foreground;
+  }
+
+  .stat-sub {
+    @apply mt-1 text-xs text-muted-foreground;
+  }
+
+  /* --- list rows ---------------------------------------------------------- */
+
+  .row {
+    @apply rounded-lg border bg-card p-3 transition-colors sm:px-4;
+  }
+
+  .row:hover {
+    background-color: var(--accent);
+  }
+
+  .row-title {
+    @apply text-sm font-semibold tracking-tight text-foreground;
+  }
+
+  .meta {
+    @apply mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground;
+  }
+
+  .meta-label {
+    @apply text-muted-foreground/70;
+  }
+
+  /* --- badges ------------------------------------------------------------- */
+
+  .badge {
+    @apply inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium;
+  }
+
+  .badge-neutral {
+    @apply bg-muted text-muted-foreground;
+  }
+  .badge-success {
+    @apply bg-success-soft text-success-foreground;
+  }
+  .badge-warning {
+    @apply bg-warning-soft text-warning-foreground;
+  }
+  .badge-danger {
+    @apply bg-danger-soft text-danger-foreground;
+  }
+  .badge-info {
+    @apply bg-info-soft text-info-foreground;
+  }
+
+  /* --- empty and error states --------------------------------------------
+     An empty screen is an invitation to act, so these say what to do next
+     rather than only reporting that there is nothing here. */
+  .empty {
+    @apply rounded-lg border border-dashed bg-card/40 px-4 py-8 text-center;
+  }
+
+  .empty-title {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .empty-hint {
+    @apply mx-auto mt-1 max-w-sm text-sm text-muted-foreground;
+  }
+
+  .alert-error {
+    @apply flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm;
+    background-color: var(--danger-soft);
+    color: var(--danger-foreground);
+    border-color: oklch(from var(--danger-foreground) l c h / 0.25);
+  }
+
+  /* --- navigation --------------------------------------------------------- */
 
   .nav-link {
-    @apply rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+    @apply flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors;
   }
 
-  /* Set by app-header on the link matching location.pathname. */
+  .nav-link:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+
   .nav-link[aria-current="page"] {
-    @apply bg-slate-900 text-white hover:bg-slate-800 hover:text-white;
+    @apply bg-primary text-primary-foreground;
   }
 
-  /* Applied to <body offline> by the online/offline tracker; disables and
-     dims controls that would perform a mutating (non-GET) request. */
+  .nav-link[aria-current="page"]:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .nav-icon {
+    @apply grid size-4 shrink-0 place-items-center text-[0.95em] opacity-80;
+  }
+
+  /* --- fee meter ---------------------------------------------------------
+     The signature element. A student's fee position is the institute's
+     heartbeat, and "₹45,000 of ₹65,000" is a sentence you have to read. This
+     is the same fact as a proportion you can take in without reading. */
+  .meter {
+    @apply mt-3 h-1.5 w-full overflow-hidden rounded-full;
+    background-color: var(--muted);
+  }
+
+  .meter-fill {
+    @apply h-full rounded-full transition-[width] duration-500 ease-out;
+    background-color: var(--success-foreground);
+  }
+
+  .meter-fill[data-over="true"] {
+    background-color: var(--warning-foreground);
+  }
+
+  /* --- skeletons ---------------------------------------------------------
+     Shown as the initial content of a slot, so first paint has the shape of
+     the list that is coming instead of a bare "Loading…" line that collapses
+     to nothing and shifts the page. */
+  .skeleton {
+    @apply rounded-md;
+    background-color: var(--muted);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  /* --- toasts ------------------------------------------------------------- */
+
+  .toast {
+    @apply pointer-events-auto flex items-center gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm font-medium;
+    background-color: var(--card);
+    color: var(--card-foreground);
+    box-shadow: 0 8px 24px -8px hsl(var(--shadow-color) / 0.25);
+    animation: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* --- navigation progress ----------------------------------------------
+     A boosted navigation is a fetch, not a page load, so the browser shows no
+     progress of its own. Without this, a slow screen change looks like a
+     click that did nothing. */
+  .nav-progress {
+    @apply pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 origin-left scale-x-0 opacity-0;
+    background-color: var(--ring);
+    transition: transform 400ms ease-out, opacity 200ms ease-out;
+  }
+
+  body.is-navigating .nav-progress {
+    @apply scale-x-75 opacity-100;
+  }
+
+  /* --- offline / stale, set by the service worker and online tracker ------ */
+
   [offline] [data-needs-net] {
     @apply pointer-events-none opacity-50;
   }
 
-  /* Banner injected by the service worker into a cached API fragment. */
   [data-stale] {
-    @apply mb-2 rounded bg-amber-50 px-3 py-1.5 text-xs text-amber-700;
+    @apply mb-2 rounded-md px-3 py-1.5 text-xs;
+    background-color: var(--warning-soft);
+    color: var(--warning-foreground);
   }
 
-  /* Fragment returned by the service worker's synthetic 503 response. */
   [data-offline] {
-    @apply rounded bg-amber-50 p-3 text-amber-800;
+    @apply rounded-lg px-3 py-2.5 text-sm;
+    background-color: var(--warning-soft);
+    color: var(--warning-foreground);
   }
 
   /* Hides screen content until a route guard resolves (services/auth.js
      requireUser/requireAnonymous), so a signed-out visitor to /home never
-     sees the page before the redirect fires. */
+     sees the page before the redirect fires. This rule must be reachable at
+     first paint, which is why the stylesheet is linked from each screen's
+     <head> rather than imported from JS -- see bootstrap.js. */
   [data-auth-pending] > * {
     visibility: hidden;
+  }
+}
+
+/* View Transitions: a boosted screen change cross-fades the page region
+   instead of blinking. Scoped to #page so the persistent shell (sidebar,
+   top bar) is never part of the animation -- that is what makes the shell
+   read as genuinely persistent rather than redrawn. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(page),
+::view-transition-new(page) {
+  animation-duration: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(page),
+  ::view-transition-new(page) {
+    animation: none;
   }
 }

@@ -38,7 +38,9 @@ async function paymentsHtml(body) {
 async function feeSummaryHtml(body) {
   const studentId = form.text(body, "studentId", "Student", { required: false, max: 128 });
   if (!studentId) {
-    return renderer.feeSummaryFragment({ studentName: "No student selected", totalFee: 0, paid: 0 });
+    // Its own fragment rather than the summary fed zeroes: that would draw a
+    // full meter and a "fees clear" badge for a student nobody has chosen.
+    return renderer.feeSummaryEmptyFragment();
   }
 
   const student = await requireStudent(studentId);

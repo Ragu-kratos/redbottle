@@ -4,8 +4,13 @@ let nextId = 0;
 
 // Light DOM, no shadow root -- a native "input" event on the inner <input>
 // bubbles straight through to whatever listens on <ui-input> itself (no
-// shadow-DOM retargeting), so consumers can bind @input directly on the
-// host and read e.target.value exactly like a plain inline <input>.
+// shadow-DOM retargeting), so consumers can bind @input directly on the host
+// and read e.target.value exactly like a plain inline <input>.
+//
+// Only the sign-in form uses this. Everywhere else the screens author plain
+// <input class="control"> inside a <form hx-post>, because htmx serialises a
+// form from the real DOM controls within it and each field needs a genuine
+// `name` -- see the .field/.control classes in styles/index.css.
 export class UiInput extends LitElement {
   static properties = {
     label: { type: String },
@@ -31,14 +36,14 @@ export class UiInput extends LitElement {
 
   render() {
     return html`
-      <label class="mb-3 block text-sm" for=${this._id}>
-        <span class="mb-1 block text-slate-600">${this.label}</span>
+      <label class="field" for=${this._id}>
+        <span>${this.label}</span>
         <input
           id=${this._id}
+          class="control"
           type=${this.type}
           ?required=${this.required}
           autocomplete=${this.autocomplete}
-          class="w-full rounded border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
           .value=${this.value}
         />
       </label>
