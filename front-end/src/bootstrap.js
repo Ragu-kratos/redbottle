@@ -1,4 +1,16 @@
-import "./styles/index.css";
+// No `import "./styles/index.css"` here on purpose. The stylesheet is linked
+// from each screen's <head> instead (`<link rel="stylesheet"
+// href="/src/styles/index.css">`), which makes it render-blocking.
+//
+// Imported from JS, the CSS only arrived after Vite had resolved this module
+// graph -- so in `vite dev` the first paint had zero stylesheets: raw unstyled
+// markup, briefly visible, because even the `[data-auth-pending] > *
+// { visibility: hidden }` gate is part of that CSS and had not landed yet. The
+// production build was fine (Vite injects a <link> at build time), so this was
+// a dev-only flash, which is exactly where it gets seen most.
+//
+// Vite processes the linked path in dev and rewrites it to the hashed asset in
+// the build, so there is still exactly one stylesheet in either mode.
 import htmx from "htmx.org";
 import { installHtmxAuth, refresh, FN_ORIGIN } from "./services/api.js";
 import { trackOnline } from "./utils/online.js";

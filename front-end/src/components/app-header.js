@@ -79,14 +79,26 @@ export class AppHeader extends LitElement {
   }
 
   render() {
-    if (!this._user) return html``;
+    // Renders the full chrome even before Auth has resolved a user, and this is
+    // load-bearing for layout stability. It used to `return html``` while
+    // `_user` was null, so the header was 0px tall at first paint and jumped to
+    // its full height a beat later when onIdTokenChanged fired -- shoving the
+    // whole page down (a measured CLS of 0.27, in production as well as dev).
+    //
+    // Rendering it unconditionally is safe because every screen carrying an
+    // <app-header> is behind requireUser(), so a user is guaranteed to arrive;
+    // and the header sits inside the [data-auth-pending] subtree, which is
+    // hidden with `visibility` rather than `display`, so these boxes already
+    // reserve their space before they are revealed. Only the email genuinely
+    // depends on the user, and it holds its line with a non-breaking space so
+    // the height does not change when the address lands.
     const here = location.pathname.replace(/\/$/, "") || "/home";
     return html`
       <header class="border-b border-slate-200 bg-white">
         <div class="flex items-center justify-between gap-3 px-4 py-3">
           <div>
             <h1 class="text-lg font-semibold">RedBottle Institute</h1>
-            <p class="text-sm text-slate-500">${this._user.email}</p>
+            <p class="text-sm text-slate-500">${this._user?.email ?? " "}</p>
           </div>
           <div class="flex items-center gap-3">
             ${!this._online
