@@ -1,0 +1,61 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-south1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "front-end/dist",
+    "ignore": ["**/.*"],
+    "rewrites": [
+      { "source": "/", "destination": "/screens/index.html" },
+      { "source": "/login", "destination": "/screens/login.html" },
+      { "source": "/home", "destination": "/screens/home.html" },
+      { "source": "/courses", "destination": "/screens/courses.html" },
+      { "source": "/trainers", "destination": "/screens/trainers.html" },
+      { "source": "/batches", "destination": "/screens/batches.html" },
+      { "source": "/students", "destination": "/screens/students.html" },
+      { "source": "/attendance", "destination": "/screens/attendance.html" },
+      { "source": "/fees", "destination": "/screens/fees.html" }
+    ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "pubsub": {
+      "port": 8085
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
+}

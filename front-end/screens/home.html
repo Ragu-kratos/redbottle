@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-4xl gap-6 px-4 py-6">
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="section-title">Today at a glance</h2>
+            <ui-button
+              size="xs"
+              variant="outline"
+              data-needs-net
+              data-api="dashboard"
+              hx-target="#dashboard-slot"
+              hx-swap="innerHTML"
+              hx-indicator="#dashboard-spinner"
+            >
+              Refresh
+            </ui-button>
+          </div>
+          <!-- Spinner sits OUTSIDE #dashboard-slot: nesting it inside means
+               the first innerHTML swap destroys it, and every trigger after
+               that points hx-indicator at nothing. -->
+          <p id="dashboard-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <!-- hx-get must be static here (Vite replaces %VITE_FN_BASE%), not
+               JS-stamped: htmx's own auto-init fires the one-shot "load"
+               trigger before the entry script's auth-gated stampEndpoints()
+               ever runs, so a JS-only URL is always missing when "load"
+               fires. The Refresh button above is click-triggered, which is
+               why data-api works for it. -->
+          <div
+            id="dashboard-slot"
+            hx-get="%VITE_FN_BASE%/api-dashboard/dashboard"
+            hx-trigger="load, refresh from:body"
+            hx-swap="innerHTML"
+            hx-indicator="#dashboard-spinner"
+          ></div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title mb-2">Where to start</h2>
+          <ul class="grid gap-1 text-sm text-slate-600">
+            <li>Add your <a class="underline" href="/courses">courses</a> and
+              <a class="underline" href="/trainers">trainers</a> first.</li>
+            <li>Open a <a class="underline" href="/batches">batch</a> for a course, then
+              <a class="underline" href="/students">enrol students</a> into it.</li>
+            <li>Mark <a class="underline" href="/attendance">attendance</a> per batch per day,
+              and record <a class="underline" href="/fees">fees</a> as they come in.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/home.js"></script>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Batches -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
+        <section class="card">
+          <h2 class="section-title mb-3">Open a batch</h2>
+          <p class="mb-3 text-sm text-slate-500">
+            A batch is one running instance of a course. Add the
+            <a class="underline" href="/courses">course</a> and
+            <a class="underline" href="/trainers">trainer</a> first -- the server rejects a
+            batch pointing at either one that no longer exists.
+          </p>
+          <form
+            id="batch-form"
+            hx-post="%VITE_FN_BASE%/api-batches/batches"
+            hx-target="#batches-slot"
+            hx-swap="innerHTML"
+            hx-indicator="#batches-spinner"
+            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
+          >
+            <label class="field">
+              <span>Batch code</span>
+              <input class="control" name="code" required maxlength="40" placeholder="MERN-A" />
+            </label>
+
+            <label class="field">
+              <span>Course</span>
+              <select
+                class="control"
+                name="courseId"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/courses"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Trainer</span>
+              <select
+                class="control"
+                name="trainerId"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/trainers"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Status</span>
+              <select
+                class="control"
+                name="status"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/batchStatuses"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Start date</span>
+              <input class="control" name="startDate" type="date" required />
+            </label>
+
+            <label class="field">
+              <span>End date (optional)</span>
+              <input class="control" name="endDate" type="date" />
+            </label>
+
+            <label class="field">
+              <span>Schedule (optional)</span>
+              <input class="control" name="schedule" maxlength="120" placeholder="Mon/Wed/Fri 7-9pm" />
+            </label>
+
+            <label class="field">
+              <span>Capacity (seats)</span>
+              <input class="control" name="capacity" type="number" min="1" max="500" required />
+            </label>
+
+            <div class="sm:col-span-2">
+              <ui-button variant="primary" type="submit" data-needs-net>Open batch</ui-button>
+            </div>
+          </form>
+        </section>
+
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="section-title">Batches</h2>
+            <ui-button
+              size="xs"
+              variant="outline"
+              data-needs-net
+              data-api="batches"
+              hx-target="#batches-slot"
+              hx-swap="innerHTML"
+              hx-indicator="#batches-spinner"
+            >
+              Refresh
+            </ui-button>
+          </div>
+          <p id="batches-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <div
+            id="batches-slot"
+            hx-get="%VITE_FN_BASE%/api-batches/batches"
+            hx-trigger="load, refresh from:body"
+            hx-swap="innerHTML"
+            hx-indicator="#batches-spinner"
+          ></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/batches.js"></script>
+  </body>
+</html>

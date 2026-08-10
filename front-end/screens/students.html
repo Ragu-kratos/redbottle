@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Students -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
+        <section class="card">
+          <h2 class="section-title mb-3">Enrol a student</h2>
+          <p class="mb-3 text-sm text-slate-500">
+            The batch must belong to the selected course, and must have a free seat -- the
+            server checks both and explains which one failed.
+          </p>
+          <form
+            id="student-form"
+            hx-post="%VITE_FN_BASE%/api-students/students"
+            hx-target="#students-slot"
+            hx-swap="innerHTML"
+            hx-indicator="#students-spinner"
+            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
+          >
+            <label class="field">
+              <span>Student name</span>
+              <input class="control" name="name" required maxlength="120" />
+            </label>
+
+            <label class="field">
+              <span>Phone</span>
+              <input class="control" name="phone" required maxlength="24" />
+            </label>
+
+            <label class="field">
+              <span>Email (optional)</span>
+              <input class="control" name="email" type="email" maxlength="160" />
+            </label>
+
+            <label class="field">
+              <span>Course</span>
+              <select
+                class="control"
+                name="courseId"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/courses"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Batch</span>
+              <select
+                class="control"
+                name="batchId"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/batches"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Status</span>
+              <select
+                class="control"
+                name="status"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/studentStatuses"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Enrolment date</span>
+              <input class="control" name="enrolledOn" type="date" required />
+            </label>
+
+            <label class="field">
+              <span>Agreed fee (₹, blank = course price)</span>
+              <input class="control" name="totalFee" type="number" min="0" step="1" />
+            </label>
+
+            <label class="field sm:col-span-2">
+              <span>Notes (optional)</span>
+              <textarea class="control" name="notes" rows="2" maxlength="600"></textarea>
+            </label>
+
+            <div class="sm:col-span-2">
+              <ui-button variant="primary" type="submit" data-needs-net>Enrol student</ui-button>
+            </div>
+          </form>
+        </section>
+
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="section-title">Students</h2>
+            <ui-button
+              size="xs"
+              variant="outline"
+              data-needs-net
+              data-api="students"
+              hx-target="#students-slot"
+              hx-swap="innerHTML"
+              hx-indicator="#students-spinner"
+            >
+              Refresh
+            </ui-button>
+          </div>
+          <p id="students-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <div
+            id="students-slot"
+            hx-get="%VITE_FN_BASE%/api-students/students"
+            hx-trigger="load, refresh from:body"
+            hx-swap="innerHTML"
+            hx-indicator="#students-spinner"
+          ></div>
+          <p class="mt-2 text-xs text-slate-400">
+            Per-student dues are on the <a class="underline" href="/fees">fees</a> screen, where
+            they can be aggregated exactly for one student.
+          </p>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/students.js"></script>
+  </body>
+</html>

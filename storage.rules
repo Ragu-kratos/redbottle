@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Deny-all by default, matching firestore.rules: the client never talks to
+// Firebase Storage directly until this project actually has Storage-backed
+// code. Loosen this deliberately, in the same change as the code that reads
+// it -- do not grant broad access "just in case".
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

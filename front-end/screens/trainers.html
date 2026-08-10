@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trainers -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
+        <section class="card">
+          <h2 class="section-title mb-3">Add a trainer</h2>
+          <form
+            id="trainer-form"
+            hx-post="%VITE_FN_BASE%/api-trainers/trainers"
+            hx-target="#trainers-slot"
+            hx-swap="innerHTML"
+            hx-indicator="#trainers-spinner"
+            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
+          >
+            <label class="field">
+              <span>Name</span>
+              <input class="control" name="name" required maxlength="120" />
+            </label>
+
+            <label class="field">
+              <span>Phone</span>
+              <input class="control" name="phone" required maxlength="24" />
+            </label>
+
+            <label class="field">
+              <span>Email (optional)</span>
+              <input class="control" name="email" type="email" maxlength="160" />
+            </label>
+
+            <label class="field">
+              <span>Expertise (optional)</span>
+              <input class="control" name="expertise" maxlength="200" />
+            </label>
+
+            <div class="sm:col-span-2">
+              <ui-button variant="primary" type="submit" data-needs-net>Add trainer</ui-button>
+            </div>
+          </form>
+        </section>
+
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="section-title">Trainers</h2>
+            <ui-button
+              size="xs"
+              variant="outline"
+              data-needs-net
+              data-api="trainers"
+              hx-target="#trainers-slot"
+              hx-swap="innerHTML"
+              hx-indicator="#trainers-spinner"
+            >
+              Refresh
+            </ui-button>
+          </div>
+          <p id="trainers-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <div
+            id="trainers-slot"
+            hx-get="%VITE_FN_BASE%/api-trainers/trainers"
+            hx-trigger="load, refresh from:body"
+            hx-swap="innerHTML"
+            hx-indicator="#trainers-spinner"
+          ></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/trainers.js"></script>
+  </body>
+</html>

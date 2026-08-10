@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Courses -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
+        <section class="card">
+          <h2 class="section-title mb-3">Add a course</h2>
+          <!-- Plain <form> with real named controls, not Lit components:
+               htmx serialises a form by reading the actual DOM controls inside
+               it, so every field needs a genuine `name`. -->
+          <form
+            id="course-form"
+            hx-post="%VITE_FN_BASE%/api-courses/courses"
+            hx-target="#courses-slot"
+            hx-swap="innerHTML"
+            hx-indicator="#courses-spinner"
+            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
+          >
+            <label class="field">
+              <span>Course name</span>
+              <input class="control" name="title" required maxlength="120" />
+            </label>
+
+            <label class="field">
+              <span>Category</span>
+              <!-- Options come from the server (functions/endpoints/default/options.js)
+                   so a <select>'s values can never drift from the model's enum.
+                   hx-target="this" replaces this element's own children. -->
+              <select
+                class="control"
+                name="category"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/courseCategories"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Duration (weeks)</span>
+              <input class="control" name="durationWeeks" type="number" min="1" max="260" required />
+            </label>
+
+            <label class="field">
+              <span>Fee (₹, whole rupees)</span>
+              <input class="control" name="feeAmount" type="number" min="0" step="1" required />
+            </label>
+
+            <label class="field sm:col-span-2">
+              <span>Description (optional)</span>
+              <textarea class="control" name="description" rows="2" maxlength="600"></textarea>
+            </label>
+
+            <div class="sm:col-span-2">
+              <ui-button variant="primary" type="submit" data-needs-net>Add course</ui-button>
+            </div>
+          </form>
+        </section>
+
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="section-title">Course catalogue</h2>
+            <ui-button
+              size="xs"
+              variant="outline"
+              data-needs-net
+              data-api="courses"
+              hx-target="#courses-slot"
+              hx-swap="innerHTML"
+              hx-indicator="#courses-spinner"
+            >
+              Refresh
+            </ui-button>
+          </div>
+          <!-- Spinner outside the swap target -- see home.html for why. -->
+          <p id="courses-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <div
+            id="courses-slot"
+            hx-get="%VITE_FN_BASE%/api-courses/courses"
+            hx-trigger="load, refresh from:body"
+            hx-swap="innerHTML"
+            hx-indicator="#courses-spinner"
+          ></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/courses.js"></script>
+  </body>
+</html>

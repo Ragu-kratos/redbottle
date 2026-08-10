@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* Server-rendered markup (functions/libs/services/renderer.js) lives outside
+   Vite's root, so Tailwind's automatic source detection never scans it --
+   without this, classes used only there are missing from the built CSS
+   entirely. Keep this path in sync if renderer.js ever moves. */
+@source "../../../functions/libs/services/renderer.js";
+
+/* Custom elements default to display:inline; Tailwind's Preflight does not
+   change that. Without this, the whole app renders as an inline run. */
+@layer base {
+  app-header,
+  login-form,
+  ui-button,
+  ui-input,
+  ui-alert {
+    display: block;
+  }
+}
+
+@layer components {
+  /* Form controls are plain <input>/<select>/<textarea> in the screens rather
+     than Lit components, for one concrete reason: htmx serialises a form by
+     reading the real DOM controls inside it, so every field needs a genuine
+     `name` on a genuine control, and a <select> that htmx swaps <option>s into
+     needs the hx-* attributes on the <select> itself (put them on a wrapping
+     custom element and the first swap replaces the <select>). These classes
+     keep that markup as short as a component call would be. */
+  .field {
+    @apply mb-3 block text-sm;
+  }
+
+  .field > span {
+    @apply mb-1 block text-slate-600;
+  }
+
+  .control {
+    @apply w-full rounded border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none;
+  }
+
+  .card {
+    @apply rounded-lg border border-slate-200 bg-white p-4;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-slate-700;
+  }
+
+  .nav-link {
+    @apply rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  /* Set by app-header on the link matching location.pathname. */
+  .nav-link[aria-current="page"] {
+    @apply bg-slate-900 text-white hover:bg-slate-800 hover:text-white;
+  }
+
+  /* Applied to <body offline> by the online/offline tracker; disables and
+     dims controls that would perform a mutating (non-GET) request. */
+  [offline] [data-needs-net] {
+    @apply pointer-events-none opacity-50;
+  }
+
+  /* Banner injected by the service worker into a cached API fragment. */
+  [data-stale] {
+    @apply mb-2 rounded bg-amber-50 px-3 py-1.5 text-xs text-amber-700;
+  }
+
+  /* Fragment returned by the service worker's synthetic 503 response. */
+  [data-offline] {
+    @apply rounded bg-amber-50 p-3 text-amber-800;
+  }
+
+  /* Hides screen content until a route guard resolves (services/auth.js
+     requireUser/requireAnonymous), so a signed-out visitor to /home never
+     sees the page before the redirect fires. */
+  [data-auth-pending] > * {
+    visibility: hidden;
+  }
+}

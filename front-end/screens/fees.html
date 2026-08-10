@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fees -- RedBottle Institute</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-auth-pending>
+    <div class="min-h-screen">
+      <app-header></app-header>
+      <main class="mx-auto grid max-w-3xl gap-6 px-4 py-6">
+        <section class="card">
+          <h2 class="section-title mb-3">Record a fee receipt</h2>
+          <form
+            id="payment-form"
+            hx-post="%VITE_FN_BASE%/api-payments/payments"
+            hx-target="#payments-slot"
+            hx-swap="innerHTML"
+            hx-indicator="#fees-spinner"
+            class="sm:grid sm:grid-cols-2 sm:gap-x-4"
+          >
+            <label class="field sm:col-span-2">
+              <span>Student</span>
+              <!-- Picking a student drives the two panels below via
+                   `change from:#fee-student`, and is also the field this form
+                   posts. One control, both jobs. -->
+              <select
+                class="control"
+                id="fee-student"
+                name="studentId"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/students"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Amount (₹, negative to correct a receipt)</span>
+              <input class="control" name="amount" type="number" step="1" required />
+            </label>
+
+            <label class="field">
+              <span>Mode</span>
+              <select
+                class="control"
+                name="mode"
+                required
+                hx-get="%VITE_FN_BASE%/api-options/paymentModes"
+                hx-trigger="load"
+                hx-target="this"
+                hx-swap="innerHTML"
+              ></select>
+            </label>
+
+            <label class="field">
+              <span>Paid on</span>
+              <input class="control" name="paidOn" type="date" required />
+            </label>
+
+            <label class="field">
+              <span>Note (optional)</span>
+              <input class="control" name="note" maxlength="300" placeholder="Instalment 2" />
+            </label>
+
+            <div class="sm:col-span-2">
+              <ui-button variant="primary" type="submit" data-needs-net>Record receipt</ui-button>
+            </div>
+          </form>
+        </section>
+
+        <section>
+          <h2 class="section-title mb-3">Fee position</h2>
+          <p id="fees-spinner" class="htmx-indicator text-sm text-slate-400">Loading…</p>
+          <!-- `reload` is fired by the entry script after a receipt is saved:
+               the POST response refreshes the receipt list, and this panel has
+               to catch up with it. -->
+          <div
+            id="fee-summary-slot"
+            hx-get="%VITE_FN_BASE%/api-payments/summary"
+            hx-trigger="load, reload, change from:#fee-student"
+            hx-include="#fee-student"
+            hx-swap="innerHTML"
+            hx-indicator="#fees-spinner"
+          ></div>
+        </section>
+
+        <section>
+          <h2 class="section-title mb-3">Receipts</h2>
+          <div
+            id="payments-slot"
+            hx-get="%VITE_FN_BASE%/api-payments/payments"
+            hx-trigger="load, change from:#fee-student"
+            hx-include="#fee-student"
+            hx-swap="innerHTML"
+            hx-indicator="#fees-spinner"
+          ></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/entries/fees.js"></script>
+  </body>
+</html>
