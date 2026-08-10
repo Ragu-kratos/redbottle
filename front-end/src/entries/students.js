@@ -8,7 +8,11 @@ import "../components/ui-button.js";
 
 // Guard, prefill the enrolment date, then hand off to htmx.
 if (await requireUser()) {
-  resetAfterSave(document.getElementById("student-form"));
+  // Keep the enrolment date across a save: the front office enrols several
+  // students in one sitting, and a plain reset would clear the date that
+  // prefillDates wrote, leaving the next submit blocked by `required` with
+  // nothing on screen explaining why.
+  resetAfterSave(document.getElementById("student-form"), { keep: ["enrolledOn"] });
 
   prefillDates(document);
 

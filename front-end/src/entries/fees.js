@@ -16,7 +16,12 @@ if (await requireUser()) {
 
   // The POST refreshes the receipt list (it targets #payments-slot), but the
   // totals panel is a separate slot with its own request, so nudge it.
+  //
+  // Same guard as resetAfterSave: htmx:afterRequest bubbles, and the student and
+  // mode <select>s in this form each load their own options, so without it the
+  // summary would reload on those too -- before a student is even chosen.
   form.addEventListener("htmx:afterRequest", (evt) => {
+    if ((evt.detail.elt ?? evt.target) !== form) return;
     if (evt.detail.successful) htmx.trigger("#fee-summary-slot", "reload");
   });
 

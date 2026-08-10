@@ -17,6 +17,15 @@
 // fix one field.
 export function resetAfterSave(form, { keep = [] } = {}) {
   form.addEventListener("htmx:afterRequest", (evt) => {
+    // Only the form's OWN request (its hx-post) may reset it. htmx:afterRequest
+    // bubbles, and every <select> in these forms loads its <option>s with its
+    // own hx-get -- so without this guard the options arriving would count as a
+    // successful save and wipe the form. That really happened: it silently
+    // cleared the date that prefillDates had just written, leaving enrolment
+    // blocked by `required` with nothing on screen to explain why. It would
+    // also have thrown away anything the user had already typed.
+    if ((evt.detail.elt ?? evt.target) !== form) return;
+
     if (!evt.detail.successful) return;
 
     const preserved = keep.map((name) => [name, form.elements[name]?.value]);

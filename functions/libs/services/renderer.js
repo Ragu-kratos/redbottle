@@ -248,10 +248,16 @@ function rosterFragment({ batchCode, date, students, marks, savedAt }) {
       </div>`;
   }
 
-  const present = students.filter((s) => marks[s.id] === "present").length;
+  // One predicate for both the checkboxes and the tally. They used to differ --
+  // the count tested `=== "present"` while the checkbox tested `!== "absent"` --
+  // so a student with no mark yet rendered ticked but was not counted, and a
+  // fresh register for four students displayed "1/4 present" above four ticked
+  // boxes. Derive both from this and they cannot drift again.
+  const isPresent = (s) => marks[s.id] !== "absent"; // an unmarked register defaults to present
+  const present = students.filter(isPresent).length;
+
   const rows = students
     .map((s) => {
-      const isPresent = marks[s.id] !== "absent"; // default a fresh register to present
       return `
         <li class="flex items-center justify-between gap-2 rounded border border-slate-200 bg-white p-3">
           <label class="flex flex-1 items-center gap-3 text-sm">
@@ -260,7 +266,7 @@ function rosterFragment({ batchCode, date, students, marks, savedAt }) {
               name="mark_${escapeHtml(s.id)}"
               value="present"
               class="h-4 w-4 rounded border-slate-300"
-              ${isPresent ? "checked" : ""}
+              ${isPresent(s) ? "checked" : ""}
             />
             <span class="font-medium">${escapeHtml(s.name)}</span>
           </label>

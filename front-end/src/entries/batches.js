@@ -8,7 +8,9 @@ import "../components/ui-button.js";
 
 // Guard, prefill the date inputs, then hand off to htmx.
 if (await requireUser()) {
-  resetAfterSave(document.getElementById("batch-form"));
+  // Keep the start date across a save, for the same reason as the students
+  // screen: consecutive batches are usually opened with the same start date.
+  resetAfterSave(document.getElementById("batch-form"), { keep: ["startDate"] });
 
   // Before htmx.process(): a load-triggered request that includes a date field
   // must not send an empty string.
